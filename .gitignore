@@ -1,5 +1,9 @@
 # Python cache
 __pycache__/
+.pytest_cache/
 
 # Virtual Environment
 venv/
+
+# Environment variables
+.env
