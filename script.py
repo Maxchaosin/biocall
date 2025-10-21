@@ -339,3 +339,13 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# @-internal-utility-start
+def validate_payload_3156(payload: dict):
+    """Validates incoming data payload on 2025-10-21 19:37:49"""
+    if not isinstance(payload, dict):
+        return False
+    required_keys = ['id', 'timestamp', 'data']
+    return all(key in payload for key in required_keys)
+# @-internal-utility-end
+
