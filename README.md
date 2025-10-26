@@ -28,7 +28,7 @@ When a `TokensLocked` event is detected, it signifies that a user has deposited 
 2.  Wait for a sufficient number of block confirmations to mitigate the risk of a chain reorganization (reorg).
 3.  Construct, sign, and broadcast a transaction on the destination chain to a corresponding `Bridge` contract, typically calling a function like `mintTokens` to issue the wrapped assets to the user's recipient address.
 
-This script simulates this entire workflow in a modular and extensible way.
+This project simulates this entire workflow in a modular and extensible way.
 
 ## Code Architecture
 
@@ -38,16 +38,19 @@ The script is designed with a clear separation of concerns, using several classe
 
 -   `BlockchainConnector`: A reusable utility class that manages the connection to a blockchain node via an RPC endpoint using the `web3.py` library. It handles connection setup, verification, and reconnection logic.
 
--   `EventScanner`: The core of the listening mechanism. It takes a blockchain connection and contract details, and its primary method `scan_blocks` polls a range of blocks for a specific event (e.g., `TokensLocked`). It is designed to be resilient to RPC errors.
+-   `EventScanner`: The core of the listening mechanism. It takes a blockchain connection and contract details, and its primary method, `scan_blocks`, polls a range of blocks for a specific event (e.g., `TokensLocked`). It is designed to be resilient to RPC errors.
 
 -   `TransactionProcessor`: This class acts on the events detected by the `EventScanner`. It is responsible for constructing, signing, and (in this simulation) logging the details of the transaction that would be sent to the destination chain. It encapsulates the logic for interacting with the destination bridge contract.
 
 -   `BridgeOrchestrator`: The main conductor that ties all the other components together. It initializes the system, manages the main application loop, maintains state (like the last block scanned), and coordinates the flow from the `EventScanner` to the `TransactionProcessor`.
 
-The main execution flow is straightforward:
+The main execution flow brings these components together:
 
 ```python
 # script.py
+from config import ConfigManager
+from orchestrator import BridgeOrchestrator
+
 if __name__ == "__main__":
     config = ConfigManager()
     orchestrator = BridgeOrchestrator(config)
@@ -71,7 +74,6 @@ if __name__ == "__main__":
 | BlockchainConnector   |     |  BlockchainConnector   |
 | (Source Chain RPC)    |     | (Dest. Chain RPC)      |
 +-----------------------+     +------------------------+
-
 ```
 
 ## How it Works
@@ -80,17 +82,17 @@ The script follows a continuous, stateful process:
 
 1.  **Initialization**: The `BridgeOrchestrator` is created. It instantiates the `ConfigManager` to load settings, sets up `BlockchainConnector` instances for both source and destination chains, and initializes the `EventScanner` and `TransactionProcessor`.
 
-2.  **State Management**: The orchestrator loads its state from a local file (`scanner_state.json`). This file stores the last successfully scanned block number. This ensures that if the script is stopped and restarted, it can resume where it left off without missing events or reprocessing old ones.
+2.  **State Management**: The orchestrator loads its state from a local file (`scanner_state.json`). This file stores the last successfully scanned block number, ensuring that if the script is stopped and restarted, it can resume where it left off without missing events or reprocessing old ones.
 
 3.  **The Main Loop**: The orchestrator enters an infinite loop to continuously monitor the source chain.
 
-4.  **Event Scanning**: In each iteration, it determines the range of blocks to scan. It starts from `last_processed_block + 1` up to the latest block on the chain, minus a configurable number of `BLOCK_CONFIRMATIONS_REQUIRED`. This delay ensures that any detected event is on a finalized block, protecting against reorgs. The scan is performed in batches to avoid overwhelming the RPC node.
+4.  **Event Scanning**: In each iteration, it determines the block range to scan. This range starts from `last_processed_block + 1` and ends at the latest block minus a safety margin (`BLOCK_CONFIRMATIONS_REQUIRED`). This delay ensures any detected event is on a finalized block, protecting against reorgs. The scan is performed in batches to avoid overwhelming the RPC node.
 
-5.  **Confirmation & Processing**: If the `EventScanner` finds any `TokensLocked` events, the orchestrator iterates through them. For each event, it confirms it has not been processed before (by checking against a list of processed transaction hashes) and then passes it to the `TransactionProcessor`.
+5.  **Confirmation & Processing**: If the `EventScanner` finds any `TokensLocked` events, the orchestrator iterates through them. For each event, it verifies that the event's transaction hash has not been processed before (to prevent duplicates) and then passes the event data to the `TransactionProcessor`.
 
 6.  **Transaction Simulation**: The `TransactionProcessor` takes the event data (recipient, amount, etc.), builds a `mintTokens` transaction for the destination chain, signs it with the listener's private key, and logs the details. **In this simulation, the transaction is NOT broadcast to the network.**
 
-7.  **State Update**: After scanning a block range, the orchestrator updates its `last_processed_block` state and saves it back to the `scanner_state.json` file. The loop then pauses for a configured interval before starting the next cycle.
+7.  **State Update**: After scanning a block range, the orchestrator updates its `last_processed_block` state and saves it back to `scanner_state.json`. The loop then pauses for a configured interval before starting the next cycle.
 
 ## Getting Started
 
@@ -147,15 +149,19 @@ POLL_INTERVAL_SECONDS=15
 
 ### 4. Install Dependencies
 
-It's recommended to use a virtual environment to manage project dependencies.
+First, create and activate a Python virtual environment to isolate project dependencies:
 
 ```bash
 # Create and activate a virtual environment
 python3 -m venv venv
 source venv/bin/activate # On macOS/Linux
 # venv\Scripts\activate  # On Windows
+```
 
-# Install the required libraries
+Once the environment is active, install the required libraries:
+
+```bash
+# Install the required libraries from requirements.txt
 pip install -r requirements.txt
 ```
 The `requirements.txt` file specifies the project's core dependencies:
