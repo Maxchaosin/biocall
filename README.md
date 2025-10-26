@@ -1,15 +1,15 @@
 # {repo_name}
 
-This repository contains a Python-based simulation of a cross-chain bridge event listener. It is designed as a robust, architecturally sound component that demonstrates how to monitor events on a source blockchain and trigger corresponding actions on a destination blockchain.
+This repository contains a Python-based simulation of a cross-chain bridge event listener. It is designed as a robust, architecturally-sound component that demonstrates how to monitor events on a source blockchain and trigger corresponding actions on a destination blockchain.
 
 ## Concept
 
 Cross-chain bridges are essential for blockchain interoperability, allowing assets and data to move between different networks. A critical component of any bridge is the **oracle** or **listener** network. These listeners monitor a `Bridge` smart contract on one chain (the "source chain") for specific events, such as `TokensLocked`.
 
-When a `TokensLocked` event is detected, it signifies that a user has deposited assets into the bridge with the intent to receive an equivalent "wrapped" asset on another chain (the "destination chain"). The listener's job is to:
+When a `TokensLocked` event is detected, it signifies that a user has deposited assets into the bridge, intending to receive an equivalent "wrapped" asset on another chain (the "destination chain"). The listener's job is to:
 
 1.  Securely verify this event.
-2.  Wait for a sufficient number of block confirmations to mitigate the risk of chain reorganizations (reorgs).
+2.  Wait for a sufficient number of block confirmations to mitigate the risk of a chain reorganization (reorg).
 3.  Construct, sign, and broadcast a transaction on the destination chain to a corresponding `Bridge` contract, typically calling a function like `mintTokens` to issue the wrapped assets to the user's recipient address.
 
 This script simulates this entire workflow in a modular and extensible way.
@@ -27,6 +27,16 @@ The script is designed with a clear separation of concerns, using several classe
 -   `TransactionProcessor`: This class acts on the events detected by the `EventScanner`. It is responsible for constructing, signing, and (in this simulation) logging the details of the transaction that would be sent to the destination chain. It encapsulates the logic for interacting with the destination bridge contract.
 
 -   `BridgeOrchestrator`: The main conductor that ties all the other components together. It initializes the system, manages the main application loop, maintains state (like the last block scanned), and coordinates the flow of information from the `EventScanner` to the `TransactionProcessor`.
+
+The main execution flow is straightforward:
+
+```python
+# script.py
+if __name__ == "__main__":
+    config = ConfigManager()
+    orchestrator = BridgeOrchestrator(config)
+    orchestrator.run()
+```
 
 ```
 +-----------------------+
@@ -54,17 +64,17 @@ The script follows a continuous, stateful process:
 
 1.  **Initialization**: The `BridgeOrchestrator` is created. It instantiates the `ConfigManager` to load settings, sets up `BlockchainConnector` instances for both source and destination chains, and initializes the `EventScanner` and `TransactionProcessor`.
 
-2.  **State Management**: The orchestrator loads its state from a local file (`scanner_state.json`). This file stores the block number of the last block that was successfully scanned. This ensures that if the script is stopped and restarted, it can resume from where it left off without missing events or reprocessing old ones.
+2.  **State Management**: The orchestrator loads its state from a local file (`scanner_state.json`). This file stores the last successfully scanned block number. This ensures that if the script is stopped and restarted, it can resume where it left off without missing events or reprocessing old ones.
 
 3.  **The Main Loop**: The orchestrator enters an infinite loop to continuously monitor the source chain.
 
 4.  **Event Scanning**: In each iteration, it determines the range of blocks to scan. It starts from the `last_processed_block + 1` up to the latest block on the chain, minus a configurable number of `BLOCK_CONFIRMATIONS_REQUIRED`. This delay ensures that any detected event is on a finalized block, protecting against reorgs. The scan is performed in batches to avoid overwhelming the RPC node.
 
-5.  **Confirmation & Processing**: If the `EventScanner` finds any `TokensLocked` events, the orchestrator iterates through them. For each event, it confirms it hasn't been processed before (by checking against a list of processed transaction hashes) and then passes it to the `TransactionProcessor`.
+5.  **Confirmation & Processing**: If the `EventScanner` finds any `TokensLocked` events, the orchestrator iterates through them. For each event, it confirms it has not been processed before (by checking against a list of processed transaction hashes) and then passes it to the `TransactionProcessor`.
 
 6.  **Transaction Simulation**: The `TransactionProcessor` takes the event data (recipient, amount, etc.), builds a `mintTokens` transaction for the destination chain, signs it with the listener's private key, and logs the details. **In this simulation, the transaction is NOT broadcast to the network.**
 
-7.  **State Update**: After scanning a block range, the orchestrator updates `last_processed_block` in its state and saves it back to the `scanner_state.json` file. The loop then pauses for a configured interval before starting the next cycle.
+7.  **State Update**: After scanning a block range, the orchestrator updates its `last_processed_block` state and saves it back to the `scanner_state.json` file. The loop then pauses for a configured interval before starting the next cycle.
 
 ## Getting Started
 
@@ -80,7 +90,7 @@ git clone <your-repo-url> {repo_name}
 cd {repo_name}
 ```
 
-### 3. Set Up Environment
+### 3. Environment Setup
 
 The script uses a `.env` file for configuration. Create one in the root directory by copying the example file:
 
@@ -119,7 +129,7 @@ SCAN_BATCH_SIZE=500
 POLL_INTERVAL_SECONDS=15
 ```
 
-### 4. Set Up a Virtual Environment and Install Dependencies
+### 4. Install Dependencies
 
 It's recommended to use a virtual environment to manage project dependencies.
 
