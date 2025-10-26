@@ -102,7 +102,7 @@ The script follows a continuous, stateful process:
 ### 2. Clone the Repository
 
 ```bash
-git clone <your-repo-url> {repo_name}
+git clone https://github.com/your-username/{repo_name}.git
 cd {repo_name}
 ```
 
@@ -150,16 +150,19 @@ POLL_INTERVAL_SECONDS=15
 It's recommended to use a virtual environment to manage project dependencies.
 
 ```bash
-# Create a virtual environment
+# Create and activate a virtual environment
 python3 -m venv venv
-
-# Activate it (on macOS/Linux)
-source venv/bin/activate
-# Or on Windows
-# venv\Scripts\activate
+source venv/bin/activate # On macOS/Linux
+# venv\Scripts\activate  # On Windows
 
 # Install the required libraries
 pip install -r requirements.txt
+```
+The `requirements.txt` file specifies the project's core dependencies:
+```
+# requirements.txt
+python-dotenv>=1.0.0
+web3>=6.0.0
 ```
 
 ### 5. Run the Script
