@@ -1,10 +1,26 @@
 # {repo_name}
 
-This repository contains a Python-based simulation of a cross-chain bridge event listener. It is designed as a robust, architecturally-sound component that demonstrates how to monitor events on a source blockchain and trigger corresponding actions on a destination blockchain.
+This project is a well-architected Python simulation of a cross-chain bridge event listener. It demonstrates a robust approach to monitoring events on a source blockchain and triggering corresponding actions on a destination blockchain.
 
 ## Concept
 
-Cross-chain bridges are essential for blockchain interoperability, allowing assets and data to move between different networks. A critical component of any bridge is the **oracle** or **listener** network. These listeners monitor a `Bridge` smart contract on one chain (the "source chain") for specific events, such as `TokensLocked`.
+Cross-chain bridges are essential for blockchain interoperability, allowing assets and data to move between different networks. A critical component of any bridge is the **oracle** or **listener** network. These listeners monitor a `Bridge` smart contract on one chain (the "source chain") for specific events.
+
+For example, a listener might watch for a `TokensLocked` event, which could be defined in a Solidity contract like this:
+
+```solidity
+// A simplified Bridge contract interface on the source chain
+interface ISourceBridge {
+    event TokensLocked(
+        address indexed user,
+        address indexed token,
+        uint256 amount,
+        bytes32 indexed destinationRecipient
+    );
+
+    function lockTokens(address token, uint256 amount, bytes32 destinationRecipient) external;
+}
+```
 
 When a `TokensLocked` event is detected, it signifies that a user has deposited assets into the bridge, intending to receive an equivalent "wrapped" asset on another chain (the "destination chain"). The listener's job is to:
 
@@ -26,7 +42,7 @@ The script is designed with a clear separation of concerns, using several classe
 
 -   `TransactionProcessor`: This class acts on the events detected by the `EventScanner`. It is responsible for constructing, signing, and (in this simulation) logging the details of the transaction that would be sent to the destination chain. It encapsulates the logic for interacting with the destination bridge contract.
 
--   `BridgeOrchestrator`: The main conductor that ties all the other components together. It initializes the system, manages the main application loop, maintains state (like the last block scanned), and coordinates the flow of information from the `EventScanner` to the `TransactionProcessor`.
+-   `BridgeOrchestrator`: The main conductor that ties all the other components together. It initializes the system, manages the main application loop, maintains state (like the last block scanned), and coordinates the flow from the `EventScanner` to the `TransactionProcessor`.
 
 The main execution flow is straightforward:
 
@@ -68,7 +84,7 @@ The script follows a continuous, stateful process:
 
 3.  **The Main Loop**: The orchestrator enters an infinite loop to continuously monitor the source chain.
 
-4.  **Event Scanning**: In each iteration, it determines the range of blocks to scan. It starts from the `last_processed_block + 1` up to the latest block on the chain, minus a configurable number of `BLOCK_CONFIRMATIONS_REQUIRED`. This delay ensures that any detected event is on a finalized block, protecting against reorgs. The scan is performed in batches to avoid overwhelming the RPC node.
+4.  **Event Scanning**: In each iteration, it determines the range of blocks to scan. It starts from `last_processed_block + 1` up to the latest block on the chain, minus a configurable number of `BLOCK_CONFIRMATIONS_REQUIRED`. This delay ensures that any detected event is on a finalized block, protecting against reorgs. The scan is performed in batches to avoid overwhelming the RPC node.
 
 5.  **Confirmation & Processing**: If the `EventScanner` finds any `TokensLocked` events, the orchestrator iterates through them. For each event, it confirms it has not been processed before (by checking against a list of processed transaction hashes) and then passes it to the `TransactionProcessor`.
 
