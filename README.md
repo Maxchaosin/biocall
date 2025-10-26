@@ -8,9 +8,9 @@ Cross-chain bridges are essential for blockchain interoperability, allowing asse
 
 When a `TokensLocked` event is detected, it signifies that a user has deposited assets into the bridge with the intent to receive an equivalent "wrapped" asset on another chain (the "destination chain"). The listener's job is to:
 
-1. Securely verify this event.
-2. Wait for a sufficient number of block confirmations to mitigate the risk of chain reorganizations (reorgs).
-3. Construct, sign, and broadcast a transaction on the destination chain to a corresponding `Bridge` contract, typically calling a function like `mintTokens` to issue the wrapped assets to the user's recipient address.
+1.  Securely verify this event.
+2.  Wait for a sufficient number of block confirmations to mitigate the risk of chain reorganizations (reorgs).
+3.  Construct, sign, and broadcast a transaction on the destination chain to a corresponding `Bridge` contract, typically calling a function like `mintTokens` to issue the wrapped assets to the user's recipient address.
 
 This script simulates this entire workflow in a modular and extensible way.
 
@@ -18,15 +18,15 @@ This script simulates this entire workflow in a modular and extensible way.
 
 The script is designed with a clear separation of concerns, using several classes to handle distinct responsibilities:
 
-- `ConfigManager`: Responsible for loading and validating all necessary configuration parameters (RPC URLs, contract addresses, private keys) from a `.env` file. This keeps sensitive data and settings separate from the core logic.
+-   `ConfigManager`: Responsible for loading and validating all necessary configuration parameters (RPC URLs, contract addresses, private keys) from a `.env` file. This keeps sensitive data and settings separate from the core logic.
 
-- `BlockchainConnector`: A reusable utility class that manages the connection to a blockchain node via an RPC endpoint using the `web3.py` library. It handles connection setup, verification, and reconnection logic.
+-   `BlockchainConnector`: A reusable utility class that manages the connection to a blockchain node via an RPC endpoint using the `web3.py` library. It handles connection setup, verification, and reconnection logic.
 
-- `EventScanner`: The core of the listening mechanism. It takes a blockchain connection and contract details, and its primary method `scan_blocks` polls a range of blocks for a specific event (e.g., `TokensLocked`). It is designed to be resilient to RPC errors.
+-   `EventScanner`: The core of the listening mechanism. It takes a blockchain connection and contract details, and its primary method `scan_blocks` polls a range of blocks for a specific event (e.g., `TokensLocked`). It is designed to be resilient to RPC errors.
 
-- `TransactionProcessor`: This class acts on the events detected by the `EventScanner`. It is responsible for constructing, signing, and (in this simulation) logging the details of the transaction that would be sent to the destination chain. It encapsulates the logic for interacting with the destination bridge contract.
+-   `TransactionProcessor`: This class acts on the events detected by the `EventScanner`. It is responsible for constructing, signing, and (in this simulation) logging the details of the transaction that would be sent to the destination chain. It encapsulates the logic for interacting with the destination bridge contract.
 
-- `BridgeOrchestrator`: The main conductor that ties all the other components together. It initializes the system, manages the main application loop, maintains state (like the last block scanned), and coordinates the flow of information from the `EventScanner` to the `TransactionProcessor`.
+-   `BridgeOrchestrator`: The main conductor that ties all the other components together. It initializes the system, manages the main application loop, maintains state (like the last block scanned), and coordinates the flow of information from the `EventScanner` to the `TransactionProcessor`.
 
 ```
 +-----------------------+
@@ -54,7 +54,7 @@ The script follows a continuous, stateful process:
 
 1.  **Initialization**: The `BridgeOrchestrator` is created. It instantiates the `ConfigManager` to load settings, sets up `BlockchainConnector` instances for both source and destination chains, and initializes the `EventScanner` and `TransactionProcessor`.
 
-2.  **State Management**: The orchestrator loads its state from a local file (`scanner_state.json`). This file stores the block number of the last block that was successfully scanned. This ensures that if the script is stopped and restarted, it can resume from where it left off without missing events or re-processing old ones.
+2.  **State Management**: The orchestrator loads its state from a local file (`scanner_state.json`). This file stores the block number of the last block that was successfully scanned. This ensures that if the script is stopped and restarted, it can resume from where it left off without missing events or reprocessing old ones.
 
 3.  **The Main Loop**: The orchestrator enters an infinite loop to continuously monitor the source chain.
 
@@ -66,7 +66,7 @@ The script follows a continuous, stateful process:
 
 7.  **State Update**: After scanning a block range, the orchestrator updates `last_processed_block` in its state and saves it back to the `scanner_state.json` file. The loop then pauses for a configured interval before starting the next cycle.
 
-## Usage Example
+## Getting Started
 
 ### 1. Prerequisites
 
@@ -82,7 +82,7 @@ cd {repo_name}
 
 ### 3. Set Up Environment
 
-The script uses a `.env` file for configuration. Create one in the root directory:
+The script uses a `.env` file for configuration. Create one in the root directory by copying the example file:
 
 ```bash
 cp .env.example .env
@@ -119,11 +119,20 @@ SCAN_BATCH_SIZE=500
 POLL_INTERVAL_SECONDS=15
 ```
 
-### 4. Install Dependencies
+### 4. Set Up a Virtual Environment and Install Dependencies
 
-Install the required Python libraries from `requirements.txt`:
+It's recommended to use a virtual environment to manage project dependencies.
 
 ```bash
+# Create a virtual environment
+python3 -m venv venv
+
+# Activate it (on macOS/Linux)
+source venv/bin/activate
+# Or on Windows
+# venv\Scripts\activate
+
+# Install the required libraries
 pip install -r requirements.txt
 ```
 
