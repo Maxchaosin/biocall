@@ -39,12 +39,21 @@ The script is designed with a clear separation of concerns, using several classe
 -   `BlockchainConnector`: A reusable utility class that manages the connection to a blockchain node via an RPC endpoint using the `web3.py` library. It handles connection setup, verification, and reconnection logic.
 
 -   `EventScanner`: The core of the listening mechanism. It takes a blockchain connection and contract details, and its primary method, `scan_blocks`, polls a range of blocks for a specific event (e.g., `TokensLocked`). It is designed to be resilient to RPC errors.
+    ```python
+    # Example instantiation
+    scanner = EventScanner(
+        connector=source_chain_connector,
+        contract_address="0x...",
+        contract_abi=[...],
+        event_name="TokensLocked"
+    )
+    ```
 
 -   `TransactionProcessor`: This class acts on the events detected by the `EventScanner`. It is responsible for constructing, signing, and (in this simulation) logging the details of the transaction that would be sent to the destination chain. It encapsulates the logic for interacting with the destination bridge contract.
 
 -   `BridgeOrchestrator`: The main conductor that ties all the other components together. It initializes the system, manages the main application loop, maintains state (like the last block scanned), and coordinates the flow from the `EventScanner` to the `TransactionProcessor`.
 
-The main execution flow brings these components together:
+The main script (`script.py`) then orchestrates these components:
 
 ```python
 # script.py
@@ -158,17 +167,11 @@ source venv/bin/activate # On macOS/Linux
 # venv\Scripts\activate  # On Windows
 ```
 
-Once the environment is active, install the required libraries:
+Once the environment is active, install the required packages from `requirements.txt`. This file specifies the project's dependencies, primarily `python-dotenv` and `web3.py`.
 
 ```bash
-# Install the required libraries from requirements.txt
+# Install the required libraries
 pip install -r requirements.txt
-```
-The `requirements.txt` file specifies the project's core dependencies:
-```
-# requirements.txt
-python-dotenv>=1.0.0
-web3>=6.0.0
 ```
 
 ### 5. Run the Script
