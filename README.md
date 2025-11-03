@@ -22,7 +22,7 @@ interface ISourceBridge {
 }
 ```
 
-When a `TokensLocked` event is detected, it signifies that a user has deposited assets into the bridge, intending to receive an equivalent "wrapped" asset on another chain (the "destination chain"). The listener's job is to:
+When a `TokensLocked` event is detected, it signifies that a user has deposited assets into the bridge with the intent to receive an equivalent "wrapped" asset on the destination chain. The listener's job is to:
 
 1.  Securely verify this event.
 2.  Wait for a sufficient number of block confirmations to mitigate the risk of a chain reorganization (reorg).
@@ -103,10 +103,30 @@ The script follows a continuous, stateful process:
 2.  **State Management**: The orchestrator loads its state from a local file (`scanner_state.json`). This file stores the last successfully scanned block number, ensuring that if the script is stopped and restarted, it can resume where it left off without missing events or reprocessing old ones.
 
 3.  **The Main Loop**: The orchestrator enters an infinite loop to continuously monitor the source chain.
+    ```python
+    # A simplified conceptual representation of the main loop
+    while True:
+        # 1. Determine block range to scan based on the latest confirmed block
+        from_block = last_scanned_block + 1
+        to_block = latest_chain_block - CONFIRMATIONS
+
+        # 2. Scan for events in the determined range
+        events = event_scanner.scan_blocks(from_block, to_block)
+
+        # 3. Process each new, unhandled event
+        for event in events:
+            if not is_already_processed(event):
+                transaction_processor.process_event(event)
+                mark_as_processed(event)
+
+        # 4. Save the last scanned block number and wait for the next poll
+        save_state(to_block)
+        time.sleep(POLL_INTERVAL)
+    ```
 
 4.  **Event Scanning**: In each iteration, it determines the block range to scan. This range starts from `last_processed_block + 1` and ends at the latest block minus a safety margin (`BLOCK_CONFIRMATIONS_REQUIRED`). This delay ensures any detected event is on a finalized block, protecting against reorgs. The scan is performed in batches to avoid overwhelming the RPC node.
 
-5.  **Confirmation & Processing**: If the `EventScanner` finds any `TokensLocked` events, the orchestrator iterates through them. For each event, it verifies that the event's transaction hash has not been processed before (to prevent duplicates) and then passes the event data to the `TransactionProcessor`.
+5.  **Confirmation & Processing**: When the `EventScanner` finds new `TokensLocked` events, the orchestrator iterates through them. For each event, it verifies that the event's transaction hash has not been processed before (to prevent duplicates) and then passes the event data to the `TransactionProcessor`.
 
 6.  **Transaction Simulation**: The `TransactionProcessor` takes the event data (recipient, amount, etc.), builds a `mintTokens` transaction for the destination chain, signs it with the listener's private key, and logs the details. **In this simulation, the transaction is NOT broadcast to the network.**
 
@@ -134,7 +154,7 @@ The script uses a `.env` file for configuration. Create one in the root director
 cp .env.example .env
 ```
 
-Now, edit the `.env` file with your specific details. You will need RPC endpoint URLs for two different chains (e.g., from Infura, Alchemy, or a local node).
+Now, open the `.env` file and fill in the required values. You will need RPC endpoint URLs for two different chains (e.g., from Infura, Alchemy, or a local node).
 
 ```dotenv
 # .env file
