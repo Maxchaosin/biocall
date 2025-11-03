@@ -49,9 +49,18 @@ The script is designed with a clear separation of concerns, using several classe
     )
     ```
 
--   `TransactionProcessor`: This class acts on the events detected by the `EventScanner`. It is responsible for constructing, signing, and (in this simulation) logging the details of the transaction that would be sent to the destination chain. It encapsulates the logic for interacting with the destination bridge contract.
+-   `TransactionProcessor`: This class acts on the events detected by the `EventScanner`. It is responsible for constructing, signing, and logging the details of the transaction that would be sent to the destination chain. It encapsulates all logic for interacting with the destination bridge contract.
+    ```python
+    # Example instantiation
+    processor = TransactionProcessor(
+        connector=destination_chain_connector,
+        listener_private_key="0x...",
+        contract_address="0x...",
+        contract_abi=[...]
+    )
+    ```
 
--   `BridgeOrchestrator`: The main conductor that ties all the other components together. It initializes the system, manages the main application loop, maintains state (like the last block scanned), and coordinates the flow from the `EventScanner` to the `TransactionProcessor`.
+-   `BridgeOrchestrator`: The main conductor that ties all other components together. It initializes the system, manages the main application loop, maintains state (like the last block scanned), and coordinates the flow from `EventScanner` to `TransactionProcessor`.
 
 The main script (`script.py`) then orchestrates these components:
 
@@ -167,7 +176,7 @@ source venv/bin/activate # On macOS/Linux
 # venv\Scripts\activate  # On Windows
 ```
 
-Once the environment is active, install the required packages from `requirements.txt`. This file specifies the project's dependencies, primarily `python-dotenv` and `web3.py`.
+Once the environment is active, install the required packages from the `requirements.txt` file:
 
 ```bash
 # Install the required libraries
