@@ -2,6 +2,6 @@
 # You can install them using pip:
 # pip install -r requirements.txt
 
-web3==6.15.0
+web3==6.15.1
 requests==2.31.0
 python-dotenv==1.0.1
